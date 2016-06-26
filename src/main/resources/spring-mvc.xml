@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+          http://www.springframework.org/schema/beans
+          http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+          http://www.springframework.org/schema/context
+          http://www.springframework.org/schema/context/spring-context-4.1.xsd
+          http://www.springframework.org/schema/mvc
+          http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+          http://www.springframework.org/schema/aop
+          http://www.springframework.org/schema/aop/spring-aop-4.1.xsd ">
+
+
+  <mvc:annotation-driven validator="validator">
+    <mvc:message-converters register-defaults="true">
+      <bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"/>
+      <ref bean="mappingJacksonHttpMessageConverter" />
+    </mvc:message-converters>
+  </mvc:annotation-driven>
+
+  <mvc:default-servlet-handler />
+
+  <mvc:view-controller path="/" view-name="index"/>
+
+  <!-- 扫描controller注解,多个包中间使用半角逗号分隔 -->
+  <context:component-scan base-package="edu.whu.irlab.web" use-default-filters="false">
+    <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+  </context:component-scan>
+
+  <!--Shiro提供了Spring AOP集成用于权限注解的解析和验证, 当验证失败，其会抛出UnauthorizedException异常，此时可以使用Spring的ExceptionHandler（DefaultExceptionHandler）来进行拦截处理-->
+  <!--<aop:config proxy-target-class="true"></aop:config>-->
+  <!--<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">-->
+    <!--<property name="securityManager" ref="securityManager"/>-->
+  <!--</bean>-->
+
+  <!-- viewResovler -->
+  <bean id="viewResovler" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <!-- 决定视图类型，如果添加了jstl支持（即有jstl.jar），那么默认就是解析为jstl视图 -->
+    <property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />
+    <property name="prefix" value="/WEB-INF/view/" />
+    <property name="suffix" value=".jsp" />
+  </bean>
+
+  <!-- json 消息处理 -->
+  <bean id="mappingJacksonHttpMessageConverter"
+        class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+    <property name="supportedMediaTypes">
+      <list>
+        <value>application/json;charset=UTF-8</value>
+        <value>text/html;charset=UTF-8</value>
+      </list>
+    </property>
+  </bean>
+
+  <!-- 文件上传 -->
+  <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <property name="defaultEncoding">
+      <value>UTF-8</value>
+    </property>
+    <property name="maxUploadSize">
+      <value>10485760000</value>
+      <!-- 上传文件大小限制为31M，31*1024*1024 -->
+    </property>
+    <property name="maxInMemorySize">
+      <value>40960</value>
+    </property>
+  </bean>
+
+  <!-- 控制器异常处理 -->
+  <!--<bean id="exceptionHandlerExceptionResolver" class="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver">-->
+  <!--</bean>-->
+
+  <!--hibernate validator-->
+  <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+    <property name="providerClass"  value="org.hibernate.validator.HibernateValidator"/>
+    <!--不设置则默认为classpath下的ValidationMessages.properties -->
+    <property name="validationMessageSource" ref="messageSource"/>
+  </bean>
+  <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+    <property name="basenames">
+      <list>
+        <value>classpath:ValidationMessages</value>
+        <value>classpath:org/hibernate/validator/ValidationMessages</value>
+      </list>
+    </property>
+    <property name="useCodeAsDefaultMessage" value="false" />
+    <property name="defaultEncoding" value="UTF-8" />
+    <property name="cacheSeconds" value="60" />
+  </bean>
+</beans>
